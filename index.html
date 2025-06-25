@@ -185,7 +185,7 @@
   </div>
   <script>
     // ==== PASTE YOUR PERPLEXITY API KEY HERE ====
-    const PERPLEXITY_API_KEY = "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"; 
+    const PERPLEXITY_API_KEY = "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"; // Replace with your API key
 
     // --- File Upload ---
     const fileInput = document.getElementById('fileInput');
@@ -247,9 +247,10 @@
     chatForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const userMsg = userInput.value.trim();
-      if (!userMsg) return;
-      addMessage('user', userMsg);
-      chatHistory.push({ role: 'user', content: userMsg });
+      if (!userMsg && !uploadedImageBase64) return;
+      addMessage('user', userMsg || '[Image]');
+      // Don't push to chatHistory yet, see below
+
       userInput.value = '';
       addMessage('ai', '...');
 
@@ -259,7 +260,7 @@
         { role: "system", content: "You are a helpful AI assistant." }
       ];
       // Add previous turns (alternating user/assistant)
-      for (const msg of chatHistory.slice(0, -1)) {
+      for (const msg of chatHistory) {
         messages.push(msg);
       }
 
@@ -307,7 +308,15 @@
         if (data.choices && data.choices[0] && data.choices[0].message) {
           const aiMsg = data.choices[0].message.content.trim();
           addMessage('ai', aiMsg);
-          chatHistory.push({ role: 'assistant', content: aiMsg });
+          // Now push both user and assistant to chatHistory for alternation
+          chatHistory.push({
+            role: "user",
+            content: userContent
+          });
+          chatHistory.push({
+            role: "assistant",
+            content: aiMsg
+          });
         } else if (data.error) {
           addMessage('ai', "API Error: " + (data.error.message || data.error));
         } else {
