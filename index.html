@@ -2,330 +2,245 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Perplexity Multimodal Chat Demo</title>
+  <title>refat's chatbot</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link href="https://fonts.googleapis.com/css?family=Inter:600,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Inter:400,500,600&display=swap" rel="stylesheet" />
   <style>
-    body {
-      background: linear-gradient(120deg, #202124 0%, #202124 100%);
-      min-height: 100vh;
-      margin: 0;
-      font-family: 'Inter', Arial, sans-serif;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    :root {
+      --primary: #4CAF50;
+      --accent: #FFC107;
+      --bg: #f0f2f5;
+      --glass: rgba(255,255,255,0.25);
+      --text-dark: #111;
+      --text-light: #fff;
+      --radius: 1rem;
+      --transition: 0.3s ease;
     }
-    .chat-glass {
-      background: rgba(98, 167, 79, 0.8);
-      border-radius: 1.5rem;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.12);
-      border: 1.5px solid rgba(255,255,255,0.24);
-      backdrop-filter: blur(15px);
-      padding: 2rem 1.5rem 1.2rem 1.5rem;
-      width: 400px;
-      max-width: 98vw;
-      display: flex;
-      flex-direction: column;
-      align-items: stretch;
+    body.dark {
+      --bg: #1f1f1f;
+      --glass: rgba(32,33,36,0.5);
+      --text-dark: #eee;
+      --text-light: #ddd;
+    }
+    * { box-sizing: border-box; margin:0; padding:0; }
+    body {
+      font-family:'Inter',sans-serif;
+      background:var(--bg);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      padding:2rem 1rem;
+      min-height:100vh;
+      transition:background var(--transition);
     }
     h1 {
-      text-align: center;
-      font-size: 1.5rem;
-      font-weight: 600;
-      margin-bottom: 1.2rem;
-      color: #6b126b;
-      letter-spacing: 0.01em;
+      color:var(--primary);
+      margin-bottom:1rem;
+      font-size:2rem;
+      text-align:center;
     }
-    .file-upload-row {
-      display: flex;
-      align-items: center;
-      gap: 0.7rem;
-      margin-bottom: 1rem;
-      justify-content: center;
+    .toggle-theme {
+      position:absolute; top:1rem; right:1rem;
+      background:var(--accent); border:none; border-radius:50%;
+      width:2rem; height:2rem; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      color:var(--text-dark); transition:transform var(--transition);
     }
-    .file-upload-row input[type="file"] {
-      display: none;
+    .toggle-theme:hover { transform:scale(1.1); }
+    .chat-container {
+      background:var(--glass);
+      backdrop-filter:blur(10px);
+      border-radius:var(--radius);
+      width:100%; max-width:480px;
+      display:flex; flex-direction:column;
+      box-shadow:0 8px 32px rgba(0,0,0,0.1);
+      border:1px solid rgba(255,255,255,0.3);
+      overflow:hidden;
     }
-    .file-upload-label {
-      background: linear-gradient(120deg, #202124 0%, #202124 100%);
-      color: #fff;
-      padding: 0.5rem 1.1rem;
-      border-radius: 0.7rem;
-      font-size: 1rem;
-      cursor: pointer;
-      font-weight: 500;
-      border: none;
-      transition: filter 0.2s;
+    .file-upload {
+      display:flex; align-items:center;
+      padding:1rem; border-bottom:1px solid rgba(255,255,255,0.3);
+      gap:0.5rem;
     }
-    .file-upload-label:hover {
-      filter: brightness(1.1);
+    .file-upload input { display:none; }
+    .file-upload label {
+      background:var(--primary); color:var(--text-light);
+      padding:0.5rem 1rem; border-radius:0.5rem;
+      cursor:pointer; font-weight:500;
+      transition:background var(--transition);
     }
+    .file-upload label:hover { background:#43A047; }
     .file-name {
-      font-size: 0.96rem;
-      color: #6b126b;
-      max-width: 120px;
-      overflow-x: auto;
-    }
-    .file-preview {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 0.7rem;
-    }
-    .file-preview img {
-      max-width: 120px;
-      max-height: 120px;
-      border-radius: 1rem;
-      border: 1px solid #d2d2d2;
-      box-shadow: 0 2px 8px #0001;
-      background: #fff;
-    }
-    .file-confirmation {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      color: #27ae60;
-      font-weight: 600;
-      font-size: 1.01rem;
-      margin-bottom: 0.5rem;
-      margin-top: -0.4rem;
-      opacity: 0;
-      transition: opacity 0.3s;
-    }
-    .file-confirmation.show {
-      opacity: 1;
-    }
-    .file-confirmation .checkmark {
-      font-size: 1.3rem;
-      color: #27ae60;
-      margin-right: 0.2rem;
+      flex:1; color:var(--text-dark);
+      font-size:0.9rem; overflow:hidden;
+      text-overflow:ellipsis; white-space:nowrap;
     }
     .chat-window {
-      min-height: 160px;
-      max-height: 320px;
-      overflow-y: auto;
-      background: rgba(255,255,255,0.15);
-      border-radius: 1rem;
-      padding: 1rem;
-      margin-bottom: 1rem;
-      font-size: 1.07rem;
-      color: #222;
-      box-shadow: 0 2px 8px #0001;
+      flex:1; padding:1rem; overflow-y:auto;
+      display:flex; flex-direction:column; gap:0.75rem;
     }
     .message {
-      margin-bottom: 0.9rem;
-      line-height: 1.5;
-      word-break: break-word;
+      max-width:75%; padding:0.75rem 1rem;
+      border-radius:var(--radius); animation:fadeIn 0.3s;
     }
-    .user { text-align: right; color: #a832a8; font-weight: 600; }
-    .ai { text-align: left; color: #222; font-weight: 400; }
-    #chatForm {
-      display: flex;
-      gap: 0.5rem;
+    .message.user {
+      align-self:flex-end; background:var(--primary);
+      color:var(--text-light); border-bottom-right-radius:0.25rem;
     }
-    #userInput {
-      flex: 1;
-      padding: 0.8rem 1rem;
-      border-radius: 0.7rem;
-      border: 1px solid #d2d2d2;
-      font-size: 1rem;
-      outline: none;
-      background: rgba(255,255,255,0.7);
-      color: #2b2b2b;
+    .message.ai {
+      align-self:flex-start; background:var(--accent);
+      color:var(--text-dark); border-bottom-left-radius:0.25rem;
     }
-    #chatForm button {
-      padding: 0.8rem 1.3rem;
-      border-radius: 0.7rem;
-      border: none;
-      background: linear-gradient(120deg, #202124 0%, #202124 100%);
-      color: #fff;
-      font-weight: 600;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: filter 0.2s;
+    @keyframes fadeIn {
+      from { opacity:0; transform:translateY(10px); }
+      to { opacity:1; transform:translateY(0); }
     }
-    #chatForm button:hover {
-      filter: brightness(1.1);
+    .input-row {
+      display:flex; gap:0.5rem;
+      padding:1rem; border-top:1px solid rgba(255,255,255,0.3);
+      background:var(--glass);
     }
-    .api-key-warning {
-      color: #202124;
-      font-size: 0.95rem;
-      text-align: center;
-      margin-bottom: 0.7rem;
+    .input-row input {
+      flex:1; padding:0.75rem 1rem; border:none;
+      border-radius:0.5rem; outline:none; font-size:1rem;
+      transition:box-shadow var(--transition);
     }
-    @media (max-width: 480px) {
-      .chat-glass { width: 98vw; padding: 1.1rem 0.4rem 0.7rem 0.4rem; }
-      h1 { font-size: 1.1rem; }
+    .input-row input:focus {
+      box-shadow:0 0 0 3px rgba(76,175,80,0.3);
     }
+    .send-btn {
+      background:var(--primary); border:none;
+      padding:0 1.2rem; border-radius:0.5rem;
+      color:var(--text-light); font-weight:600;
+      cursor:pointer; transition:background var(--transition) transform var(--transition);
+    }
+    .send-btn:hover {
+      background:#43A047; transform:translateY(-2px);
+    }
+    .chat-window::-webkit-scrollbar { width:6px; }
+    .chat-window::-webkit-scrollbar-thumb { background:rgba(0,0,0,0.2); border-radius:3px; }
+    .chat-window::-webkit-scrollbar-track { background:transparent; }
   </style>
 </head>
 <body>
-  <div class="chat-glass">
-    <h1>Multimodal Chat</h1>
-    <div class="api-key-warning">
-      ⚠️ For demo only:
+  <button class="toggle-theme" title="Toggle light/dark">🌓</button>
+  <h1>Chat with bots</h1>
+  <div class="chat-container">
+    <div class="file-upload">
+      <label for="fileInput">📎 Upload</label>
+      <input type="file" id="fileInput" accept=".txt,.png,.jpg,.jpeg,.webp,.gif" />
+      <span class="file-name" id="fileName">No file chosen</span>
     </div>
-    <div class="file-upload-row">
-      <label class="file-upload-label">
-        📄 Upload File or Image
-        <input type="file" id="fileInput" accept=".txt,.png,.jpg,.jpeg,.webp,.gif" />
-      </label>
-      <span class="file-name" id="fileName"></span>
-    </div>
-    <div class="file-confirmation" id="fileConfirmation">
-      <span class="checkmark">✔️</span>
-      File uploaded!
-    </div>
-    <div class="file-preview" id="filePreview"></div>
     <div class="chat-window" id="chatWindow"></div>
-    <form id="chatForm" autocomplete="off">
-      <input id="userInput" type="text" placeholder="Ask anything..." required />
-      <button type="submit">Send</button>
+    <form id="chatForm" class="input-row" autocomplete="off">
+      <input id="userInput" type="text" placeholder="Type your message…" />
+      <button type="submit" class="send-btn">Send</button>
     </form>
   </div>
+
   <script>
-    // ==== PASTE YOUR PERPLEXITY API KEY HERE ====
-    const PERPLEXITY_API_KEY = "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"; // Replace with your API key
+    const KEY = "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";
+    document.querySelector('.toggle-theme').onclick = () => document.body.classList.toggle('dark');
 
-    // --- File Upload ---
-    const fileInput = document.getElementById('fileInput');
-    const fileNameSpan = document.getElementById('fileName');
-    const filePreviewDiv = document.getElementById('filePreview');
-    const fileConfirmation = document.getElementById('fileConfirmation');
-    let uploadedFile = null;
-    let uploadedFileContent = null;
-    let uploadedImageBase64 = null;
+    const systemMessages = [{ role:"system", content:"You are a helpful AI assistant." }];
+    const chatHistory = [];
+    let fileContent = "", imageData = "", fileName = "";
 
-    function showConfirmation() {
-      fileConfirmation.classList.add('show');
-      setTimeout(() => fileConfirmation.classList.remove('show'), 2000);
-    }
+    const fileInput = document.getElementById("fileInput");
+    const fileNameSpan = document.getElementById("fileName");
+    const chatWindow = document.getElementById("chatWindow");
+    const chatForm = document.getElementById("chatForm");
+    const userInput = document.getElementById("userInput");
 
-    fileInput.addEventListener('change', async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      fileNameSpan.textContent = file.name;
-      uploadedFile = file;
-      filePreviewDiv.innerHTML = '';
-      uploadedFileContent = null;
-      uploadedImageBase64 = null;
+    fileInput.addEventListener("change", async e => {
+      const f = e.target.files[0];
+      if (!f) return;
+      fileName = f.name;
+      fileNameSpan.textContent = fileName;
+      fileContent = ""; imageData = "";
 
-      if (file.type.startsWith("image/")) {
-        // Preview image
-        const reader = new FileReader();
-        reader.onload = function() {
-          uploadedImageBase64 = reader.result;
-          filePreviewDiv.innerHTML = `<img src="${reader.result}">`;
-          showConfirmation();
-        };
-        reader.readAsDataURL(file);
-      } else if (file.type === "text/plain") {
-        // Read text file content
-        const text = await file.text();
-        uploadedFileContent = text.slice(0, 12000); // Limit for demo
-        filePreviewDiv.innerHTML = `<div style="font-size:0.92rem;color:#6b126b;background:#fff7;padding:0.5rem 1rem;border-radius:0.6rem;max-height:90px;overflow-y:auto;">${uploadedFileContent.slice(0,200)}${uploadedFileContent.length>200?'...':''}</div>`;
-        showConfirmation();
+      if (f.type.startsWith("image/")) {
+        const r = new FileReader();
+        r.onload = () => { imageData = r.result; fileNameSpan.style.color="#4CAF50"; setTimeout(()=>fileNameSpan.style.color="",2000) };
+        r.readAsDataURL(f);
+      } else if (f.type==="text/plain") {
+        const t = await f.text();
+        fileContent = t.slice(0,12000);
+        fileNameSpan.style.color="#4CAF50";
+        setTimeout(()=>fileNameSpan.style.color="",2000);
       } else {
-        filePreviewDiv.innerHTML = `<div style="color:#b80000;">File type not supported in this demo.</div>`;
+        fileNameSpan.textContent="Unsupported";
       }
     });
 
-    // --- Chat Logic ---
-    const chatWindow = document.getElementById('chatWindow');
-    const chatForm = document.getElementById('chatForm');
-    const userInput = document.getElementById('userInput');
-    const chatHistory = [];
-
-    function addMessage(role, content) {
-      const div = document.createElement('div');
-      div.className = `message ${role}`;
-      div.textContent = content;
-      chatWindow.appendChild(div);
-      chatWindow.scrollTop = chatWindow.scrollHeight;
+    function addMessage(role,txt){
+      const d=document.createElement("div");
+      d.className="message "+role;
+      d.textContent=txt;
+      chatWindow.appendChild(d);
+      chatWindow.scrollTop=chatWindow.scrollHeight;
     }
 
-    chatForm.addEventListener('submit', async (e) => {
+    chatForm.addEventListener("submit",async e=>{
       e.preventDefault();
-      const userMsg = userInput.value.trim();
-      if (!userMsg && !uploadedImageBase64) return;
-      addMessage('user', userMsg || '[Image]');
-      // Don't push to chatHistory yet, see below
+      const userTxt=userInput.value.trim();
+      if (!userTxt && !imageData) return;
 
-      userInput.value = '';
-      addMessage('ai', '...');
+      // 1) show user
+      addMessage("user", userTxt||"[Image]");
 
-      // Build Perplexity API request
-      const url = "https://api.perplexity.ai/chat/completions";
-      let messages = [
-        { role: "system", content: "You are a helpful AI assistant." }
-      ];
-      // Add previous turns (alternating user/assistant)
-      for (const msg of chatHistory) {
-        messages.push(msg);
+      // 2) build content string
+      let prompt = userTxt;
+      if (imageData) {
+        prompt += "\n\n[Image Attached as Base64 Data URL]\n"+imageData;
+      }
+      if (fileContent) {
+        prompt = `[File: ${fileName}]\n${fileContent}\n\nUser: `+prompt;
       }
 
-      // Compose the current user message (prompt + image if present)
-      let userContent = [];
-      if (userMsg) userContent.push({ type: "text", text: userMsg });
-      if (uploadedImageBase64) userContent.push({ type: "image_url", image_url: { url: uploadedImageBase64 } });
+      // 3) assemble messages array
+      const msgs = [...systemMessages, ...chatHistory, { role:"user", content: prompt }];
 
-      if (userContent.length === 1) userContent = userContent[0];
-      if (userContent.length > 0) {
-        messages.push({
-          role: "user",
-          content: userContent
-        });
-      }
+      // 4) placeholder
+      addMessage("ai","...");
 
-      // If text file uploaded, add as system context (at the beginning)
-      if (uploadedFileContent) {
-        messages.unshift({
-          role: "system",
-          content: `The user uploaded a file named "${uploadedFile.name}". Here is its content:\n${uploadedFileContent.slice(0, 8000)}\nPlease answer user questions using the file when relevant.`
-        });
-      }
-
-      const payload = {
-        model: "sonar-pro",
-        messages,
-        max_tokens: 1024,
-        temperature: 0.7
-      };
-
+      // 5) call API
       try {
-        const response = await fetch(url, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${PERPLEXITY_API_KEY}`,
-            "Content-Type": "application/json",
-            "accept": "application/json"
+        const res = await fetch("https://api.perplexity.ai/chat/completions", {
+          method:"POST",
+          headers:{
+            "Authorization":`Bearer ${KEY}`,
+            "Content-Type":"application/json",
+            "accept":"application/json"
           },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({
+            model:"sonar-pro",
+            messages: msgs,
+            max_tokens:1024,
+            temperature:0.7
+          })
         });
-        const data = await response.json();
+        const j = await res.json();
         chatWindow.removeChild(chatWindow.lastChild);
 
-        if (data.choices && data.choices[0] && data.choices[0].message) {
-          const aiMsg = data.choices[0].message.content.trim();
-          addMessage('ai', aiMsg);
-          // Now push both user and assistant to chatHistory for alternation
-          chatHistory.push({
-            role: "user",
-            content: userContent
-          });
-          chatHistory.push({
-            role: "assistant",
-            content: aiMsg
-          });
-        } else if (data.error) {
-          addMessage('ai', "API Error: " + (data.error.message || data.error));
+        const aiTxt = j.choices?.[0]?.message?.content?.trim();
+        if (aiTxt) {
+          addMessage("ai", aiTxt);
+          chatHistory.push({ role:"user", content:prompt });
+          chatHistory.push({ role:"assistant", content:aiTxt });
         } else {
-          addMessage('ai', "Sorry, I couldn't get a response from the AI.");
+          addMessage("ai","API Error: "+(j.error?.message||JSON.stringify(j)));
         }
-      } catch (err) {
+      } catch(err) {
         chatWindow.removeChild(chatWindow.lastChild);
-        addMessage('ai', "Network error or invalid API key.");
+        addMessage("ai","Network error or invalid API key.");
       }
+
+      // reset
+      userInput.value="";
+      fileContent=""; imageData="";
+      fileNameSpan.textContent="No file chosen";
+      fileInput.value="";
     });
   </script>
 </body>
